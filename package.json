@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@mui/icons-material": "^9.0.0",
+    "@mui/x-charts": "^9.0.4",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
+  }
+}
