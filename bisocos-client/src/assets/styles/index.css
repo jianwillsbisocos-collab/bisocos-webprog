@@ -34,3 +34,63 @@
   object-fit: cover;
   display: block;
 }
+
+/* Print Styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 1in;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Force chart colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Hide sidebar and top nav */
+  .MuiAppBar-root,
+  .MuiDrawer-root {
+    display: none !important;
+  }
+
+  /* Main content full bleed */
+  main,
+  [role="main"],
+  .MuiBox-root {
+    margin: 0 !important;
+    padding: 0.5in !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Cards for print */
+  .MuiCard-root {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    margin-bottom: 0.5in !important;
+    break-inside: avoid !important;
+  }
+
+  /* Typography dark */
+  .MuiTypography-root {
+    color: black !important;
+  }
+
+  /* Charts scale */
+  .MuiBarChart-root,
+  .MuiPieChart-root {
+    max-height: 200mm !important;
+    max-width: 100% !important;
+  }
+}
+

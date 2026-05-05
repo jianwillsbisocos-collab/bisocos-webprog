@@ -6,22 +6,22 @@ import { cohesiveCardStyle } from './DashboardPage';
 
 function ReportsPage() {
   return (
-    <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-      <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.28em', color: '#a78bfa', mb: 1 }}>
+    <Box sx={{ maxWidth: '1200px', mx: 'auto' }} className="print:bg-white print:shadow-none print:border print:p-6 print:mx-auto print:w-full print:max-w-4xl">
+      <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.28em', color: '#a78bfa', mb: 1 }} className="print:text-gray-900 print:font-bold">
         Data Visualization
       </Typography>
-      <Typography variant="h4" sx={{ fontWeight: 900, color: '#0c4a6e', mb: 4 }}>
+      <Typography variant="h4" sx={{ fontWeight: 900, color: '#0c4a6e', mb: 4 }} className="print:text-2xl print:font-bold print:text-black print:mb-4">
         Analytics Reports
       </Typography>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{ mb: 4 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{ mb: 4 }} className="print:flex-col print:gap-4 print:items-stretch">
         {/* Bar Chart Card */}
-        <Card sx={{ ...cohesiveCardStyle, flex: 2 }}>
+        <Card sx={{ ...cohesiveCardStyle, flex: 2 }} className="print:bg-white print:border print:border-gray-400 print:rounded-lg print:shadow-print print:mb-4 print:w-full print:break-inside-avoid">
           <CardContent>
-            <Typography variant="h6" sx={{ color: '#0c4a6e', fontWeight: 'bold', mb: 2 }}>
+            <Typography variant="h6" sx={{ color: '#0c4a6e', fontWeight: 'bold', mb: 2 }} className="print:text-lg print:font-bold print:text-black print:mb-2">
               Quarterly Sales
             </Typography>
-            <Box sx={{ width: '100%', height: 300 }}>
+            <Box sx={{ width: '100%', height: 300 }} className="print:h-80 print:w-full">
               <BarChart
                 series={[
                   { data: [35, 44, 24, 34], label: 'Series 1', color: '#38bdf8' },
@@ -34,9 +34,9 @@ function ReportsPage() {
         </Card>
 
         {/* Pie Chart Card */}
-        <Card sx={{ ...cohesiveCardStyle, flex: 1 }}>
-          <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Typography variant="h6" sx={{ color: '#0c4a6e', fontWeight: 'bold', mb: 2, alignSelf: 'flex-start' }}>
+        <Card sx={{ ...cohesiveCardStyle, flex: 1 }} className="print:bg-white print:border print:border-gray-400 print:rounded-lg print:shadow-print print:w-full print:break-inside-avoid">
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} className="print:p-4 print:justify-center">
+            <Typography variant="h6" sx={{ color: '#0c4a6e', fontWeight: 'bold', mb: 2, alignSelf: 'flex-start' }} className="print:text-base print:font-bold print:text-black print:mb-2 print:self-start">
               Distribution
             </Typography>
             <PieChart
@@ -51,6 +51,7 @@ function ReportsPage() {
               ]}
               width={300}
               height={250}
+              className="print:w-64 print:h-48 print:max-w-full"
             />
           </CardContent>
         </Card>
@@ -60,3 +61,4 @@ function ReportsPage() {
 }
 
 export default ReportsPage;
+
