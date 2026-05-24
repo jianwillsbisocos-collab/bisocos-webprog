@@ -77,9 +77,20 @@ const SignUpPage = () => {
     setErrors({});
 
     try {
-      await signup(formData.email, formData.password, formData.name);
+      await signup({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        age: formData.age,
+        gender: formData.gender,
+        contactNumber: formData.contactNumber,
+        address: formData.address,
+        type: 'viewer',
+      });
       setSuccess(true);
-      setTimeout(() => navigate("/signin"), 2000);
+      setTimeout(() => navigate("/auth/signin"), 2000);
     } catch (error) {
       setErrors({
         general:

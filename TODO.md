@@ -1,10 +1,15 @@
-# UserPage Enhancement 3: Form Validation & UI Layout
+# TODO
 
-## Steps:
-- [x] 1. Add necessary imports (Button, Dialog, icons) and new state (openModal, formData, errors, setRows)
-- [x] 2. Update search section to single row: Stack row with search left + Add User button right
-- [x] 3. Implement Add User modal with form fields (username, password, contactNumber, firstName, etc.)
-- [x] 4. Add validation logic (real-time onChange/onBlur) and error/helperText display
-- [x] 5. Implement form submit handler to add user to DataGrid rows
-- [x] 6. Test layout, validation, and new user addition
-- [x] 7. Cleanup: Remove TODO.md
+## MongoDB connection fix (bisocos-server)
+1. Implement safer MongoDB connection behavior:
+   - Do not `process.exit(1)` on startup failure. ✅
+   - Add clearer logging specific to Atlas DNS/SRV reachability. ✅
+   - Add retry connection a few times. ✅
+2. Update server startup order if needed (so Express can still run).
+3. Run `node index.js` and verify:
+   - server starts even if Mongo temporarily fails
+   - logs show actionable error
+4. After that, user verifies connectivity:
+   - Atlas IP whitelist / DNS / firewall settings
+
+

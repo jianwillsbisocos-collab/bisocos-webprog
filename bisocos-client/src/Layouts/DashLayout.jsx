@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { styled, useTheme, alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
@@ -45,6 +46,12 @@ const dashboardNavItems = [
     title: "Users",
     to: "/dashboard/users",
     icon: PeopleIcon,
+  },
+  {
+    label: "Articles",
+    title: "Articles",
+    to: "/dashboard/articles",
+    icon: ArticleIcon,
   },
 ];
 
@@ -160,6 +167,7 @@ const DashLayout = () => {
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -170,6 +178,7 @@ const DashLayout = () => {
   };
 
   const handleLogout = () => {
+    logout();
     navigate("/");
   };
 

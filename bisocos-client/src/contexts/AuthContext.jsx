@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { loginUser, createUser } from "../services/UserServices";
 
 const AuthContext = createContext(null);
 
@@ -27,43 +28,29 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        const found = users.find(
-          (u) => u.email === email && u.password === password
-        );
-        if (found) {
-          const userData = { email: found.email, name: found.name };
-          setUser(userData);
-          localStorage.setItem("auth_user", JSON.stringify(userData));
-          resolve(userData);
-        } else {
-          reject(new Error("Invalid credentials"));
-        }
-      }, 500);
-    });
+    const { data } = await loginUser({ email, password });
+    // data: { message, token, type, firstName }
+    const userData = {
+      email,
+      name: data.firstName,
+      type: data.type,
+      token: data.token,
+    };
+    setUser(userData);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("auth_user", JSON.stringify(userData));
+    return userData;
   };
 
-  const signup = async (email, password, name) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        if (users.some((u) => u.email === email)) {
-          reject(new Error("User already exists"));
-          return;
-        }
-        const newUser = { email, password, name };
-        users.push(newUser);
-        localStorage.setItem("users", JSON.stringify(users));
-        resolve(newUser);
-      }, 500);
-    });
+  const signup = async (userData) => {
+    const { data } = await createUser(userData);
+    return data;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("auth_user");
+    localStorage.removeItem("token");
   };
 
   return (

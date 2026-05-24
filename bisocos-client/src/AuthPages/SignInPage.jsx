@@ -45,13 +45,15 @@ const SignInPage = () => {
 
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
+      const serverMsg = error?.response?.data?.message;
       setErrors({
-        general:
-          error?.message === "Invalid credentials"
-            ? "Invalid credentials. Please check your email and password."
-            : "Something went wrong. Please try again.",
+        general: serverMsg
+          ? serverMsg
+          : error?.message === "Invalid credentials"
+          ? "Invalid credentials. Please check your email and password."
+          : "Something went wrong. Please try again.",
       });
     } finally {
       setIsSubmitting(false);

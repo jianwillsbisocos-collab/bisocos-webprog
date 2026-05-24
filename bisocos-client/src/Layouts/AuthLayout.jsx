@@ -8,7 +8,7 @@ const AuthLayout = () => {
       <div className="grid min-h-screen w-full lg:grid-cols-2">
         <div className="hidden lg:block">
           <img
-            src="https://img.freepik.com/premium-photo/pine-green-background_670382-209226.jpg?w=2000"
+            src="https://i.pinimg.com/736x/bb/9f/1e/bb9f1ef53e1fa9dd186b094908a1688f.jpg"
             alt="Developer coding"
             className="h-full w-full object-cover"
           />
