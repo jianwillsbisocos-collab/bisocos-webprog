@@ -73,7 +73,8 @@ const loginUser = async (req, res) => {
 
     // Check if the user is a viewer
     if (user.type === 'viewer') {
-      return res.status(403).json({ message: 'Viewers are not allowed to log in to the dashboard.' });
+      // Completely block viewers from logging in
+      return res.status(403).json({ message: 'Access Denied' });
     }
 
     // Compare the provided password with the hashed password

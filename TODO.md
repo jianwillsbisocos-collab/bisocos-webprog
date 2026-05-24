@@ -1,15 +1,18 @@
-# TODO
+# TODO (Auth evolution)
 
-## MongoDB connection fix (bisocos-server)
-1. Implement safer MongoDB connection behavior:
-   - Do not `process.exit(1)` on startup failure. ✅
-   - Add clearer logging specific to Atlas DNS/SRV reachability. ✅
-   - Add retry connection a few times. ✅
-2. Update server startup order if needed (so Express can still run).
-3. Run `node index.js` and verify:
-   - server starts even if Mongo temporarily fails
-   - logs show actionable error
-4. After that, user verifies connectivity:
-   - Atlas IP whitelist / DNS / firewall settings
+## Step 1: Backup
+- [x] Create backup folder `.backup_pre_auth` (best-effort) and copy `bisocos-client` into it.
 
+## Step 2: Refactor
+- [ ] Update `bisocos-client/src/contexts/UserContext.jsx` to include registration/login-capable records and localStorage persistence (including credentials needed for matching).
+
+## Step 3: UsersPage
+- [ ] Update `bisocos-client/src/DashBoardPages/UserPage.jsx`:
+  - [ ] Rename dialog to “Sign Up”
+  - [ ] Use `isUsernameTaken` validation
+  - [ ] On submit, save the new user into `UserContext`
+  - [ ] Keep existing user table behavior.
+
+## Step 4: Roadmap for LoginPage
+- [ ] Provide a simple API/approach for `LoginPage` to verify username/password.
 

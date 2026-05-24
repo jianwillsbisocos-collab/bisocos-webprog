@@ -20,6 +20,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 import { cohesiveCardStyle } from './DashboardPage';
+import { useUsers } from '../contexts/UserContext';
 
 const columns = [
   { field: 'id', headerName: 'ID', width: 90, headerAlign: 'left', align: 'left' },
@@ -137,7 +138,7 @@ function validate(form) {
 }
 
 function UsersPage() {
-  const [userRows, setUserRows] = useState(initialRows);
+  const { userRows, isUsernameTaken, signupViaBackendThenCache } = useUsers();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -147,9 +148,20 @@ function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(makeEmptyForm());
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const rows = useMemo(() => {
+    const seen = new Set();
+
+    return [...userRows, ...initialRows].filter((user) => {
+      const key = (user.username || user.email || user.id).toString().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [userRows]);
 
   const filteredRows = useMemo(() => {
-    return userRows.filter((user) => {
+    return rows.filter((user) => {
       const matchesSearch =
         !searchQuery ||
         user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -163,7 +175,7 @@ function UsersPage() {
 
       return matchesSearch && matchesRole && matchesGender && matchesStatus;
     });
-  }, [userRows, searchQuery, roleFilter, genderFilter, statusFilter]);
+  }, [rows, searchQuery, roleFilter, genderFilter, statusFilter]);
 
   const handleOpen = () => {
     setDialogOpen(true);
@@ -186,28 +198,40 @@ function UsersPage() {
     setErrors(nextErrors);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = validate(form);
+    const isSampleUsernameTaken = initialRows.some(
+      (row) => row.username.toLowerCase() === form.username.trim().toLowerCase()
+    );
+
+    if (!nextErrors.username && (isUsernameTaken(form.username) || isSampleUsernameTaken)) {
+      nextErrors.username = 'Username is already taken';
+    }
+
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const nextId = userRows.length ? Math.max(...userRows.map((r) => r.id)) + 1 : 1;
-
-    const newRow = {
-      id: nextId,
-      username: form.username.trim(),
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      email: form.email.trim(),
-      age: Number(form.age),
-      role: form.role,
-      gender: form.gender,
-      status: form.status,
-    };
-
-    setUserRows((prev) => [newRow, ...prev]);
-    handleClose();
+    setIsSaving(true);
+    try {
+      await signupViaBackendThenCache({
+        form: {
+          ...form,
+          username: form.username.trim(),
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          age: Number(form.age),
+        },
+      });
+      handleClose();
+    } catch (error) {
+      setErrors({
+        form: error?.response?.data?.message || error?.message || 'Failed to save user',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -306,6 +330,7 @@ function UsersPage() {
               <DataGrid
                 rows={filteredRows}
                 columns={columns}
+                getRowId={(row) => row.username || row.email || row.id}
                 sx={{
                   border: 0,
                   '& .MuiDataGrid-columnHeaders': {
@@ -330,6 +355,12 @@ function UsersPage() {
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} id="add-user-form">
             <Stack spacing={2} sx={{ pt: 1 }}>
+              {errors.form && (
+                <Typography variant="body2" color="error">
+                  {errors.form}
+                </Typography>
+              )}
+
               <TextField
                 label="Username"
                 value={form.username}
@@ -426,8 +457,14 @@ function UsersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" form="add-user-form" variant="contained" sx={{ borderRadius: '1rem', bgcolor: '#38bdf8' }}>
-            Save
+          <Button
+            type="submit"
+            form="add-user-form"
+            variant="contained"
+            disabled={isSaving}
+            sx={{ borderRadius: '1rem', bgcolor: '#38bdf8' }}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -436,3 +473,4 @@ function UsersPage() {
 }
 
 export default UsersPage;
+

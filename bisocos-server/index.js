@@ -8,8 +8,8 @@ const bodyParser = require("body-parser");
 const jsonParser = bodyParser.json();
 const { connectDB } = require("./config/db");
 
-const userRoutes = require("./routes/userRoutes");
-const articleRoutes = require("./routes/articleRoutes");
+const userRoutes = require("./routes/UserRoutes");
+const articleRoutes = require("./routes/ArticleRoutes");
 
 const app = express();
 

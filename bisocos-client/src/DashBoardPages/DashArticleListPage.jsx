@@ -1,137 +1,379 @@
-import { useState, useEffect } from 'react';
-import { Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography, useMediaQuery } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import PostAddIcon from '@mui/icons-material/PostAdd';
-import DeleteIcon from '@mui/icons-material/Delete';
+import React, { useMemo, useState } from 'react';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { fetchArticles, createArticle, updateArticle, deleteArticle } from '../services/ArticleService';
+import SearchIcon from '@mui/icons-material/Search';
 import { cohesiveCardStyle } from './DashboardPage';
 
-const blankForm = { name: '', title: '', label: '', desc: '', image: '', content: '' };
-
-const DashArticleListPage = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState({ open: false, id: null });
-  const [form, setForm] = useState(blankForm);
-
-  const loadArticles = async () => {
-    try {
-      setLoading(true);
-      const { data } = await fetchArticles();
-      setArticles(data.articles || []);
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { loadArticles(); }, []);
-
-  const openModal = (article) => {
-    setModal({ open: true, id: article?._id ?? null });
-    // Join content array with newlines for the text area editor
-    setForm(article ? { ...blankForm, ...article, content: article.content.join('\n') } : { ...blankForm });
-  };
-
-  const closeModal = () => setModal({ open: false, id: null });
-
-  const handleChange = ({ target: { name, value } }) => setForm((prev) => ({ ...prev, [name]: value }));
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    // Split the text area by newlines to form the array the schema requires
-    const nextArticle = { ...form, content: form.content.split('\n').filter(p => p.trim()) };
-    try {
-      if (modal.id) await updateArticle(modal.id, nextArticle);
-      else await createArticle(nextArticle);
-      loadArticles();
-      closeModal();
-    } catch (error) {
-      console.error('Error saving article:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this article?")) return;
-    try {
-      await deleteArticle(id);
-      loadArticles();
-    } catch (error) {
-      console.error('Error deleting article:', error);
-    }
-  };
-
-  const fieldProps = (name, label, extra = {}) => ({
-    name, label, value: form[name], onChange: handleChange, fullWidth: true, required: true, ...extra,
-  });
-
-  const columns = [
-    { field: 'title', headerName: 'Title', flex: 1, minWidth: 150 },
-    { field: 'name', headerName: 'Slug (URL)', width: 150 },
-    { field: 'label', headerName: 'Label', width: 130 },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 180,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Stack direction="row" spacing={1} sx={{ py: 0.5 }}>
-          <Button size="small" variant="outlined" onClick={() => openModal(row)}>Edit</Button>
-          <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(row._id)}>Delete</Button>
-        </Stack>
-      ),
+const columns = [
+  { field: 'id', headerName: 'ID', width: 90, headerAlign: 'left', align: 'left' },
+  { field: 'title', headerName: 'Title', minWidth: 220, flex: 1, headerAlign: 'left', align: 'left' },
+  { field: 'author', headerName: 'Author', minWidth: 180, flex: 1, headerAlign: 'left', align: 'left' },
+  { field: 'category', headerName: 'Category', width: 160, headerAlign: 'left', align: 'left' },
+  {
+    field: 'status',
+    headerName: 'Status',
+    width: 140,
+    headerAlign: 'left',
+    align: 'left',
+    renderCell: (params) => (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          params.value === 'Published'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-amber-100 text-amber-800'
+        }`}
+      >
+        {params.value}
+      </span>
+    ),
+  },
+  {
+    field: 'publishedDate',
+    headerName: 'Published Date',
+    width: 190,
+    headerAlign: 'left',
+    align: 'left',
+    valueFormatter: (value) => {
+      if (!value) return '';
+      try {
+        return new Date(value).toLocaleDateString();
+      } catch {
+        return value;
+      }
     },
-  ];
+  },
+];
+
+const initialRows = [
+  {
+    id: 1,
+    title: 'React State Management Basics',
+    author: 'Jane Doe',
+    category: 'Web Development',
+    status: 'Published',
+    publishedDate: '2025-01-15',
+  },
+  {
+    id: 2,
+    title: 'Material UI: From Theme to Components',
+    author: 'John Smith',
+    category: 'Frontend',
+    status: 'Draft',
+    publishedDate: '',
+  },
+  {
+    id: 3,
+    title: 'Writing Clean Component APIs',
+    author: 'Alex Johnson',
+    category: 'Best Practices',
+    status: 'Published',
+    publishedDate: '2025-03-03',
+  },
+];
+
+const makeEmptyForm = () => ({
+  title: '',
+  author: '',
+  category: '',
+  status: 'Draft',
+  publishedDate: '',
+  content: '',
+});
+
+function validate(form) {
+  const errors = {};
+
+  if (!form.title.trim()) errors.title = 'Title is required';
+
+  if (!form.author.trim()) errors.author = 'Author is required';
+
+  if (!form.category.trim()) errors.category = 'Category is required';
+
+  if (!form.status || !['Draft', 'Published'].includes(form.status)) {
+    errors.status = 'Status must be Draft or Published';
+  }
+
+  if (form.status === 'Published') {
+    if (!form.publishedDate.trim()) {
+      errors.publishedDate = 'Published date is required when status is Published';
+    }
+  }
+
+  if (!form.content.trim()) errors.content = 'Content is required';
+
+  return errors;
+}
+
+function DashArticleListPage() {
+  const [articleRows, setArticleRows] = useState(initialRows);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState(makeEmptyForm());
+  const [errors, setErrors] = useState({});
+
+  const categories = useMemo(() => {
+    const set = new Set(articleRows.map((r) => r.category).filter(Boolean));
+    return Array.from(set);
+  }, [articleRows]);
+
+  const filteredRows = useMemo(() => {
+    return articleRows.filter((article) => {
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q || article.title?.toLowerCase().includes(q) || article.author?.toLowerCase().includes(q);
+
+      const matchesCategory = !categoryFilter || article.category === categoryFilter;
+      const matchesStatus = !statusFilter || article.status === statusFilter;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [articleRows, searchQuery, categoryFilter, statusFilter]);
+
+  const handleOpen = () => {
+    setDialogOpen(true);
+    setErrors({});
+    setForm(makeEmptyForm());
+  };
+
+  const handleClose = () => {
+    setDialogOpen(false);
+    setErrors({});
+    setForm(makeEmptyForm());
+  };
+
+  const handleChange = (key) => (e) => {
+    const next = { ...form, [key]: e.target.value };
+    setForm(next);
+    setErrors(validate(next));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const nextErrors = validate(form);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    const nextId = articleRows.length ? Math.max(...articleRows.map((r) => r.id)) + 1 : 1;
+
+    const newRow = {
+      id: nextId,
+      title: form.title.trim(),
+      author: form.author.trim(),
+      category: form.category,
+      status: form.status,
+      publishedDate: form.status === 'Published' ? form.publishedDate : '',
+      content: form.content,
+    };
+
+    setArticleRows((prev) => [newRow, ...prev]);
+    handleClose();
+  };
 
   return (
-    <Box sx={{ width: '100%', minWidth: 0, maxWidth: '1200px', mx: 'auto' }}>
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={2} sx={{ mb: 4 }}>
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.28em', color: '#a78bfa', mb: 1 }}>Content Management</Typography>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: '#0c4a6e' }}>Articles Directory</Typography>
-        </Box>
+    <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.28em', color: '#38bdf8', mb: 1 }}
+      >
+        Article Management
+      </Typography>
+
+      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 900, color: '#0c4a6e' }}>
+          System Articles
+        </Typography>
+
+        <Button variant="contained" onClick={handleOpen} sx={{ borderRadius: '1rem', px: 3, bgcolor: '#38bdf8' }}>
+          Add Article
+        </Button>
       </Stack>
 
-      <Card sx={{ ...cohesiveCardStyle, minWidth: 0 }}>
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-            <Typography variant="h6" sx={{ color: '#0c4a6e', fontWeight: 'bold' }}>Published Articles</Typography>
-            <Button variant="contained" startIcon={<PostAddIcon />} onClick={() => openModal()} sx={{ bgcolor: '#0c4a6e', color: 'white', borderRadius: '2rem', textTransform: 'none', fontWeight: 'bold' }}>
-              Write New Article
-            </Button>
-          </Box>
-          <Box sx={{ height: 500, width: '100%' }}>
-            <DataGrid rows={articles} columns={columns} getRowId={(row) => row._id} loading={loading} disableRowSelectionOnClick />
-          </Box>
+      <Card sx={cohesiveCardStyle}>
+        <CardContent>
+          <Stack direction="column" spacing={2} sx={{ mb: 3 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search articles by title or author..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#64748b' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '1rem', backgroundColor: '#f8fafc' } }}
+            />
+
+            <Stack direction="row" spacing={2} justifyContent="flex-start">
+              <FormControl
+                variant="outlined"
+                sx={{
+                  minWidth: 150,
+                  flex: 1,
+                  maxWidth: 200,
+                  '& .MuiOutlinedInput-root': { borderRadius: '1rem', backgroundColor: '#f8fafc' },
+                }}
+              >
+                <InputLabel>Category</InputLabel>
+                <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} label="Category">
+                  <MenuItem value="">All Categories</MenuItem>
+                  {categories.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl
+                variant="outlined"
+                sx={{
+                  minWidth: 150,
+                  flex: 1,
+                  maxWidth: 200,
+                  '& .MuiOutlinedInput-root': { borderRadius: '1rem', backgroundColor: '#f8fafc' },
+                }}
+              >
+                <InputLabel>Status</InputLabel>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Status">
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="Draft">Draft</MenuItem>
+                  <MenuItem value="Published">Published</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* spacer keeps row spacing consistent with the original 3-control layout */}
+              <Box sx={{ minWidth: 150, flex: 1, maxWidth: 200 }} />
+            </Stack>
+
+            <Box sx={{ height: 500, width: '100%' }}>
+              <DataGrid
+                rows={filteredRows}
+                columns={columns}
+                sx={{
+                  border: 0,
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '2px solid #e0f2fe',
+                  },
+                }}
+                initialState={{
+                  pagination: { paginationModel: { pageSize: 5 } },
+                }}
+                pageSizeOptions={[5, 10, 25]}
+                checkboxSelection={false}
+                disableRowSelectionOnClick
+              />
+            </Box>
+          </Stack>
         </CardContent>
       </Card>
 
-      <Dialog open={modal.open} onClose={closeModal} fullWidth maxWidth="md" fullScreen={isMobile}>
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogTitle>{modal.id ? 'Edit Article' : 'Draft New Article'}</DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={3} sx={{ pt: 1 }}>
-              <TextField {...fieldProps('title', 'Article Title')} />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField {...fieldProps('name', 'Slug / URL Name (e.g. my-project)')} />
-                <TextField {...fieldProps('label', 'Label (e.g. Web App)')} />
-              </Stack>
-              <TextField {...fieldProps('image', 'Cover Image URL')} />
-              <TextField {...fieldProps('desc', 'Short Description', { multiline: true, rows: 2 })} />
-              <TextField {...fieldProps('content', 'Article Content (Separate paragraphs with Enter key)', { multiline: true, rows: 8 })} />
+      <Dialog open={dialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Article</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} id="add-article-form">
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <TextField
+                label="Title"
+                value={form.title}
+                onChange={handleChange('title')}
+                error={Boolean(errors.title)}
+                helperText={errors.title || ''}
+                fullWidth
+                required
+              />
+
+              <TextField
+                label="Author"
+                value={form.author}
+                onChange={handleChange('author')}
+                error={Boolean(errors.author)}
+                helperText={errors.author || ''}
+                fullWidth
+                required
+              />
+
+              <TextField
+                label="Category"
+                value={form.category}
+                onChange={handleChange('category')}
+                error={Boolean(errors.category)}
+                helperText={errors.category || ''}
+                fullWidth
+                required
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select value={form.status} label="Status" onChange={handleChange('status')}>
+                  <MenuItem value="Draft">Draft</MenuItem>
+                  <MenuItem value="Published">Published</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="Published Date"
+                type="date"
+                value={form.publishedDate}
+                onChange={handleChange('publishedDate')}
+                error={Boolean(errors.publishedDate)}
+                helperText={
+                  errors.publishedDate || (form.status === 'Published' ? 'Required' : 'Optional for Draft')
+                }
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                required={form.status === 'Published'}
+              />
+
+              <TextField
+                label="Content"
+                value={form.content}
+                onChange={handleChange('content')}
+                error={Boolean(errors.content)}
+                helperText={errors.content || ''}
+                fullWidth
+                multiline
+                rows={4}
+                required
+              />
             </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={closeModal}>Cancel</Button>
-            <Button type="submit" variant="contained">Save Article</Button>
-          </DialogActions>
-        </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="submit" form="add-article-form" variant="contained" sx={{ borderRadius: '1rem', bgcolor: '#38bdf8' }}>
+            Save
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
-};
+}
+
 export default DashArticleListPage;
+

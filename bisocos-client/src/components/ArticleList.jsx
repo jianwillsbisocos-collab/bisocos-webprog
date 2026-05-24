@@ -5,8 +5,12 @@ import articles from "../assets/styles/article-content.js";
 const ArticleList = () => {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
       {articles.map((article, index) => (
-        <article key={article.name} className="rounded-3xl border-2 border-zinc-900 bg-zinc-100 p-4">
+        <article
+          key={article.name}
+          className="rounded-3xl border-2 border-zinc-900 bg-zinc-100 p-4"
+        >
           <div className="overflow-hidden rounded-[1.25rem]">
             <img
               src={article.image}
@@ -33,3 +37,4 @@ const ArticleList = () => {
 };
 
 export default ArticleList;
+
