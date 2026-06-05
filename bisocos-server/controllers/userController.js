@@ -18,11 +18,18 @@ const createUser = async (req, res) => {
       return res.status(400).json({ message: 'Password is required' });
     }
 
+    const normalizedBody = {
+      ...req.body,
+      email: req.body.email?.trim().toLowerCase(),
+      username: req.body.username?.trim(),
+      isActive: req.body.status ? req.body.status === 'Active' : req.body.isActive,
+    };
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
     // Create the user with the hashed password
-    const user = await User.create({ ...req.body, password: hashedPassword });
+    const user = await User.create({ ...normalizedBody, password: hashedPassword });
 
     res.status(201).json(user);
   } catch (error) {
@@ -32,14 +39,21 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    const normalizedBody = {
+      ...req.body,
+      email: req.body.email?.trim().toLowerCase(),
+      username: req.body.username?.trim(),
+      isActive: req.body.status ? req.body.status === 'Active' : req.body.isActive,
+    };
+
     // Check if the password is being updated
-    if (req.body.password) {
+    if (normalizedBody.password) {
       // Hash the new password
-      req.body.password = await bcrypt.hash(req.body.password, 10);
+      normalizedBody.password = await bcrypt.hash(normalizedBody.password, 10);
     }
 
     // Update the user with the new data
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, normalizedBody, { new: true });
 
     res.json(user);
   } catch (error) {
@@ -58,10 +72,15 @@ const deleteUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const identifier = (req.body.email || req.body.username || '').trim();
 
-    // Find the user by email
-    const user = await User.findOne({ email });
+    // Allow admins/users to sign in with either email or username.
+    const user = await User.findOne(
+      identifier.includes('@')
+        ? { email: identifier.toLowerCase() }
+        : { username: identifier }
+    );
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

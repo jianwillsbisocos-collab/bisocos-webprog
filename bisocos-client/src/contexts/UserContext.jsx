@@ -110,18 +110,10 @@ export const UserProvider = ({ children }) => {
       address: form.address ?? 'N/A',
     };
 
-    try {
-      const { data } = await createUser(payload);
-      const nextRow = buildRow(data);
-      persist([nextRow, ...userRows]);
-      return nextRow;
-    } catch (error) {
-      if (error?.message !== 'Network Error') throw error;
-
-      const nextRow = buildRow();
-      persist([nextRow, ...userRows]);
-      return nextRow;
-    }
+    const { data } = await createUser(payload);
+    const nextRow = buildRow(data);
+    persist([nextRow, ...userRows]);
+    return nextRow;
   };
 
   const value = useMemo(

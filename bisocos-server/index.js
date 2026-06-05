@@ -52,6 +52,19 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.get("/", (req, res) => {
+    res.json({ message: "Bisocos API is running" });
+});
+
+app.use("/api", async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        res.status(500).json({ message: error.message || "Database connection failed" });
+    }
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/articles", articleRoutes);
 
@@ -63,11 +76,15 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Start Express first so the server is always reachable
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+    // Start Express first so the server is always reachable locally.
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
 
-// Connect to MongoDB after Express is up (non-blocking)
+// Connect to MongoDB after Express is up (non-blocking).
 connectDB().catch((err) => {
     console.error('Failed to connect to MongoDB on startup:', err?.message || err);
     console.error('Server is running but DB-dependent routes will fail until reconnected.');
 });
+
+module.exports = app;

@@ -1,5 +1,5 @@
 // Central place for API configuration.
-// Update HOST if your backend runs on a different address/port.
+// Set VITE_API_URL in production to your deployed backend URL.
 
-export const HOST = 'http://localhost:5000';
+export const HOST = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

@@ -1,10 +1,3 @@
-const dns = require('dns');
-try {
-    dns.setServers(['8.8.8.8', '8.8.4.4']);
-} catch (e) {
-    console.warn('⚠️ Warning: Failed to set custom DNS servers, using system default.', e.message);
-}
-
 const mongoose = require('mongoose');
 
 const uri = process.env.MONGO_URI;
@@ -14,34 +7,35 @@ if (!uri) {
 }
 
 let isConnected = false;
+let connectionPromise = null;
 
 const connectDB = async () => {
+    if (isConnected || mongoose.connection.readyState === 1) {
+        return mongoose.connection;
+    }
+
+    if (connectionPromise) {
+        return connectionPromise;
+    }
+
     console.log('Connecting to MongoDB Atlas...');
     console.log(`URI: ${uri.replace(/[^@]+:.*@/, '****:****@')}`);
 
+    connectionPromise = mongoose.connect(uri, {
+        tls: true,
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 45000,
+        retryWrites: true,
+    });
+
     try {
-        // Use Mongoose only (avoid dual driver TLS handshakes)
-        await mongoose.connect(uri, {
-            // Atlas requires TLS
-            tls: true,
-
-            // Timeouts
-            serverSelectionTimeoutMS: 15000,
-            socketTimeoutMS: 45000,
-
-            // Keep compatibility for retryable writes
-            retryWrites: true,
-
-            // If you still get TLS errors, you may temporarily set:
-            // tlsAllowInvalidCertificates: true
-            // (NOT recommended for production)
-        });
-
+        await connectionPromise;
         isConnected = true;
-        console.log('✅ MongoDB Connected Successfully!');
+        console.log('MongoDB Connected Successfully!');
         return mongoose.connection;
     } catch (error) {
-        console.error('❌ MongoDB connection failed:', error.message);
+        connectionPromise = null;
+        console.error('MongoDB connection failed:', error.message);
         throw error;
     }
 };
@@ -55,4 +49,3 @@ process.on('SIGINT', async () => {
     }
     process.exit(0);
 });
-

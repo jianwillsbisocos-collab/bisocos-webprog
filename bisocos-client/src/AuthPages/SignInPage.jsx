@@ -17,9 +17,7 @@ const SignInPage = () => {
     const newErrors = {};
 
     if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Username or email is required";
     }
 
     if (!password.trim()) {
@@ -87,7 +85,7 @@ const SignInPage = () => {
               htmlFor="email"
               className="block text-xs font-semibold uppercase tracking-wider text-zinc-500"
             >
-              Email Address
+              Username or Email
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
@@ -101,7 +99,7 @@ const SignInPage = () => {
                     ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                     : "border-zinc-200 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 }`}
-                placeholder="you@example.com"
+                placeholder="Bisocos04"
               />
             </div>
             {errors.email && (
@@ -202,4 +200,3 @@ to="/auth/signup"
 };
 
 export default SignInPage;
-

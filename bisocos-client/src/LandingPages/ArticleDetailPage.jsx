@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import { useEffect, useState } from "react";
 import { fetchArticles } from "../services/ArticleService";
+import fallbackArticles from "../assets/styles/article-content.js";
 
 const ArticleDetailPage = () => {
   const { name } = useParams();
@@ -15,11 +16,16 @@ const ArticleDetailPage = () => {
         setLoading(true);
         setError(null);
         const { data } = await fetchArticles();
-        const list = data?.articles || [];
+        const list = data?.articles?.length ? data.articles : fallbackArticles;
         const found = list.find((a) => a.name === name);
         setArticle(found || null);
       } catch (e) {
-        setError(e);
+        const found = fallbackArticles.find((a) => a.name === name);
+        if (found) {
+          setArticle(found);
+        } else {
+          setError(e);
+        }
       } finally {
         setLoading(false);
       }
@@ -58,15 +64,17 @@ const ArticleDetailPage = () => {
 
       <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <div className="overflow-hidden rounded-[1.25rem] mb-8">
-            <img
-              src={article.image}
-              alt={article.title}
-              className="h-64 w-full object-cover"
-            />
-          </div>
+          {article.image && (
+            <div className="overflow-hidden rounded-[1.25rem] mb-8">
+              <img
+                src={article.image}
+                alt={article.title}
+                className="h-64 w-full object-cover"
+              />
+            </div>
+          )}
           <div className="prose prose-zinc max-w-none">
-            {article.content.map((paragraph, index) => (
+            {(Array.isArray(article.content) ? article.content : [article.content]).filter(Boolean).map((paragraph, index) => (
               <p key={index} className="mt-6 text-base leading-7 whitespace-pre-wrap">
                 {paragraph}
               </p>

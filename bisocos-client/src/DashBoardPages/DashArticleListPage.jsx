@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -20,6 +20,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 import { cohesiveCardStyle } from './DashboardPage';
+import { createArticle, fetchArticles } from '../services/ArticleService';
 
 const columns = [
   { field: 'id', headerName: 'ID', width: 90, headerAlign: 'left', align: 'left' },
@@ -97,6 +98,16 @@ const makeEmptyForm = () => ({
   content: '',
 });
 
+const toArticleRow = (article, fallbackId) => ({
+  id: article._id ?? article.id ?? fallbackId,
+  title: article.title ?? '',
+  author: article.author ?? '',
+  category: article.category ?? article.label ?? '',
+  status: article.status ?? 'Draft',
+  publishedDate: article.publishedDate ?? '',
+  content: Array.isArray(article.content) ? article.content.join('\n') : article.content ?? '',
+});
+
 function validate(form) {
   const errors = {};
 
@@ -123,6 +134,7 @@ function validate(form) {
 
 function DashArticleListPage() {
   const [articleRows, setArticleRows] = useState(initialRows);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -131,6 +143,20 @@ function DashArticleListPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(makeEmptyForm());
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const loadArticles = async () => {
+      try {
+        const { data } = await fetchArticles();
+        const rows = (data?.articles || []).map((article, index) => toArticleRow(article, index + 1));
+        if (rows.length) setArticleRows(rows);
+      } catch {
+        // Keep sample rows visible if the backend is not reachable.
+      }
+    };
+
+    loadArticles();
+  }, []);
 
   const categories = useMemo(() => {
     const set = new Set(articleRows.map((r) => r.category).filter(Boolean));
@@ -168,26 +194,33 @@ function DashArticleListPage() {
     setErrors(validate(next));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const nextId = articleRows.length ? Math.max(...articleRows.map((r) => r.id)) + 1 : 1;
-
-    const newRow = {
-      id: nextId,
+    setIsSaving(true);
+    try {
+      const payload = {
       title: form.title.trim(),
       author: form.author.trim(),
-      category: form.category,
+      category: form.category.trim(),
       status: form.status,
       publishedDate: form.status === 'Published' ? form.publishedDate : '',
-      content: form.content,
+        content: form.content,
     };
 
-    setArticleRows((prev) => [newRow, ...prev]);
-    handleClose();
+      const { data } = await createArticle(payload);
+      setArticleRows((prev) => [toArticleRow(data, Date.now()), ...prev]);
+      handleClose();
+    } catch (error) {
+      setErrors({
+        form: error?.response?.data?.message || error?.message || 'Failed to save article',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -298,6 +331,12 @@ function DashArticleListPage() {
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} id="add-article-form">
             <Stack spacing={2} sx={{ pt: 1 }}>
+              {errors.form && (
+                <Typography color="error" variant="body2">
+                  {errors.form}
+                </Typography>
+              )}
+
               <TextField
                 label="Title"
                 value={form.title}
@@ -366,8 +405,8 @@ function DashArticleListPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" form="add-article-form" variant="contained" sx={{ borderRadius: '1rem', bgcolor: '#38bdf8' }}>
-            Save
+          <Button disabled={isSaving} type="submit" form="add-article-form" variant="contained" sx={{ borderRadius: '1rem', bgcolor: '#38bdf8' }}>
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
